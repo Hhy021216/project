@@ -1,0 +1,11 @@
+{
+ "manifest_version":3,"name":"BOSS 高情商回复助手","version":"1.0.9",
+ "description":"结合简历项目经历与当前会话，生成三条可复制的高情商回复。只辅助，不自动发送。",
+ "minimum_chrome_version":"120","permissions":["storage","clipboardWrite"],
+ "host_permissions":["https://www.zhipin.com/*","https://dashscope.aliyuncs.com/*","https://api.deepseek.com/*"],
+ "background":{"service_worker":"background.js","type":"module"},
+ "options_page":"options.html","action":{"default_title":"显示或收起回复助手；其他页面打开设置"},
+ "content_scripts":[{"matches":["https://www.zhipin.com/*"],"js":["loader.js"],"run_at":"document_idle","all_frames":false}],
+ "web_accessible_resources":[{"resources":["panel.js","reader.js","core.js","panel.css"],"matches":["https://www.zhipin.com/*"]}],
+ "content_security_policy":{"extension_pages":"script-src 'self'; object-src 'none'; base-uri 'none'"}
+}

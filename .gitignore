@@ -1,0 +1,72 @@
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+venv/
+.venv/
+env/
+ENV/
+
+# ---------- Node ----------
+node_modules/
+dist/
+.vite/
+*.local
+
+# ---------- 环境与密钥 ----------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+secrets.json
+credentials.json
+
+# ---------- 模型权重（体积过大，不入库） ----------
+models/
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.onnx
+*.h5
+*.gguf
+
+# ---------- 向量库 / 数据库文件 ----------
+chroma_db/
+*.sqlite3
+*.db
+*.faiss
+*.index
+milvus_data/
+volumes/
+
+# ---------- 运行产物与日志 ----------
+logs/
+*.log
+storage/logs/
+docker_data/
+minio_data/
+postgres_data/
+
+# ---------- IDE / 系统 ----------
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---------- 压缩包 ----------
+*.zip
+*.7z
+*.rar
+*.tar.gz

@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>BOSS 回复助手 · 设置</title><link rel="stylesheet" href="options.css"></head>
+<body><main>
+ <header><div class="mark" aria-hidden="true">聊</div><div><p class="eyebrow">BOSS 高情商回复助手</p><h1>让每次回复，都有你的项目作底气。</h1><p class="intro">先准备项目经历，再让 AI 帮你把话说到点上。只提供候选，发送由你决定。</p></div></header>
+ <div class="layout"><aside><h2>三步，开始对话</h2><ol><li><strong>连接模型</strong><span>选择服务，填写自己的 API Key。</span></li><li><strong>准备项目经历</strong><span>上传简历文档，检查并保存文字。</span></li><li><strong>打开 BOSS 聊天</strong><span>右侧浮窗读取当前会话，生成三条回复。</span></li></ol><div class="note"><strong>你的资料如何使用？</strong><p>密钥与项目经历保存在此浏览器本地，不同步。只有点击生成时，才把项目经历、当前聊天和话术发送给所选模型服务。</p><p>本地保存不等于加密保险箱；共享电脑请使用后清空。不会自动投递、发送或上传其他会话。</p></div><a href="https://www.zhipin.com/web/geek/chat" target="_blank" rel="noreferrer">打开 BOSS 聊天</a></aside>
+ <section aria-label="插件设置"><form id="form">
+ <div class="section-head"><span>01</span><h2>连接你的模型</h2></div>
+ <label for="provider">模型服务</label><select id="provider"><option value="qwen">Qwen 通义千问（阿里云百炼北京地域）</option><option value="deepseek">DeepSeek 官方</option></select>
+ <label for="key">API Key</label><div class="key-row"><input id="key" type="password" autocomplete="off" spellcheck="false" placeholder="填写所选平台的 API Key"><button type="button" id="reveal" aria-pressed="false">显示</button></div><p class="hint">Qwen 使用百炼北京地域的密钥，不是千问会员；DeepSeek 使用开放平台 API 密钥。API 可能单独计费。</p>
+ <details><summary>高级设置：模型名称</summary><label for="model">模型名称</label><input id="model" value="qwen-plus" spellcheck="false"><p id="endpoint" class="hint"></p></details>
+ <button id="test" type="button" class="secondary">测试连接（会产生少量 API 用量）</button>
+ <div class="section-head second"><span>02</span><h2>放入简历中的项目经历</h2></div>
+ <label class="upload" for="upload"><strong>选择项目经历文档</strong><span>DOCX / TXT / Markdown，最大 8 MB；也可以直接粘贴到下方。</span><input id="upload" type="file" accept=".docx,.txt,.md"></label>
+ <label for="project">项目经历预览与编辑</label><textarea id="project" rows="13" maxlength="60000" placeholder="项目名称、负责内容、技术栈、真实成果……\n只保留你希望用于回复的项目内容，不必上传身份证、手机号或其他敏感资料。"></textarea>
+ <p class="hint"><span id="count">0</span> / 60000 字。上传只做本地提取，保存前请核对；图片和附件不解析。</p>
+ <div class="reference"><strong>已内置你提供的三阶段话术</strong><p>开场破冰 / HR 问答与约面 / Offer 与入职。学习语气与推进方式，不把示例薪资、学历和项目当作你的事实。</p></div>
+ <div class="actions"><button type="submit" id="save">保存设置与项目经历</button><button type="button" id="clear" class="danger">清空本地资料</button></div><p id="status" role="status" aria-live="polite"></p>
+ </form></section></div><footer>不自动发送 · 会话切换重新读取 · 三条候选由你选择</footer>
+</main><script type="module" src="options.js"></script></body></html>

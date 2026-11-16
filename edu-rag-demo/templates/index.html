@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ title }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              sidebar: "#171717",
+              panel: "#212121",
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      .scrollbar-thin::-webkit-scrollbar { width: 6px; }
+      .scrollbar-thin::-webkit-scrollbar-thumb { background: #404040; border-radius: 999px; }
+    </style>
+  </head>
+  <body
+    class="h-screen overflow-hidden bg-white text-slate-800 antialiased"
+    data-welcome="{{ message | default('你好！我是 EduRAG 智能助手，有什么可以帮你的？') }}"
+  >
+    <div class="flex h-full">
+      <!-- 左侧：对话列表 -->
+      <aside
+        id="sidebar"
+        class="flex w-72 shrink-0 flex-col border-r border-black/10 bg-sidebar text-slate-200 transition-transform max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-40 max-md:shadow-2xl max-md:-translate-x-full"
+      >
+        <div class="flex items-center gap-3 px-4 py-4">
+          <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-600 text-sm font-bold text-white">E</div>
+          <div class="min-w-0 flex-1">
+            <p class="truncate text-sm font-semibold text-white">{{ title | default("EduRAG 助手") }}</p>
+            <p class="truncate text-xs text-slate-400">智能问答</p>
+          </div>
+          <button
+            id="closeSidebarBtn"
+            type="button"
+            class="rounded-lg p-2 text-slate-400 hover:bg-white/10 md:hidden"
+            aria-label="关闭侧边栏"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div class="px-3 pb-2">
+          <button
+            id="newChatBtn"
+            type="button"
+            class="flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-panel px-4 py-2.5 text-sm font-medium text-white transition hover:bg-white/10"
+          >
+            <span class="text-lg leading-none">+</span>
+            新对话
+          </button>
+        </div>
+
+        <div class="px-4 pb-2">
+          <p class="text-xs font-medium uppercase tracking-wider text-slate-500">最近对话</p>
+        </div>
+
+        <nav id="sessionList" class="scrollbar-thin flex-1 space-y-1 overflow-y-auto px-2 pb-4"></nav>
+
+        <div class="border-t border-white/10 px-4 py-3 text-xs text-slate-500">
+          Demo · 数据暂存浏览器
+        </div>
+      </aside>
+
+      <!-- 遮罩（移动端） -->
+      <div id="sidebarMask" class="fixed inset-0 z-30 hidden bg-black/40 md:hidden"></div>
+
+      <!-- 右侧：对话窗 -->
+      <div class="flex min-w-0 flex-1 flex-col bg-slate-50">
+        <!-- 顶栏 -->
+        <header class="flex shrink-0 items-center gap-3 border-b border-slate-200 bg-white px-4 py-3">
+          <button
+            id="openSidebarBtn"
+            type="button"
+            class="rounded-lg p-2 text-slate-500 hover:bg-slate-100 md:hidden"
+            aria-label="打开对话列表"
+          >
+            ☰
+          </button>
+          <div class="min-w-0 flex-1">
+            <h1 id="chatTitle" class="truncate text-base font-medium text-slate-800">新对话</h1>
+            <p class="text-xs text-slate-400">Enter 发送 · Shift+Enter 换行</p>
+          </div>
+        </header>
+
+        <!-- 消息区 -->
+        <main id="chat" class="flex-1 overflow-y-auto">
+          <div id="messages" class="mx-auto max-w-3xl px-4 py-8"></div>
+        </main>
+
+        <!-- 输入区 -->
+        <footer class="shrink-0 bg-gradient-to-t from-slate-50 via-slate-50 to-transparent px-4 pb-6 pt-2">
+          <form id="chatForm" class="mx-auto max-w-3xl">
+            <div class="flex items-end gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-lg shadow-slate-200/60">
+              <label for="input" class="sr-only">输入消息</label>
+              <textarea
+                id="input"
+                rows="1"
+                placeholder="给 EduRAG 发送消息…"
+                class="max-h-40 flex-1 resize-none bg-transparent px-3 py-2.5 text-sm outline-none placeholder:text-slate-400"
+              ></textarea>
+              <button
+                id="sendBtn"
+                type="submit"
+                class="mb-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
+                aria-label="发送"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4">
+                  <path d="M3.4 20.4 21 12 3.4 3.6l1.65 7.2L16 12 5.05 13.2z" />
+                </svg>
+              </button>
+            </div>
+            <p class="mt-2 text-center text-xs text-slate-400">演示界面，回复为占位内容，后续对接问答 API</p>
+          </form>
+        </footer>
+      </div>
+    </div>
+
+    <script>
+      const WELCOME = document.body.dataset.welcome || "你好！我是 EduRAG 智能助手，有什么可以帮你的？";
+
+      const sidebar = document.getElementById("sidebar");
+      const sidebarMask = document.getElementById("sidebarMask");
+      const sessionList = document.getElementById("sessionList");
+      const messagesEl = document.getElementById("messages");
+      const chat = document.getElementById("chat");
+      const chatTitle = document.getElementById("chatTitle");
+      const form = document.getElementById("chatForm");
+      const input = document.getElementById("input");
+      const sendBtn = document.getElementById("sendBtn");
+
+      let sessions = [];
+      let activeId = null;
+      let idSeq = 1;
+
+      function uid() {
+        return "s" + idSeq++;
+      }
+
+      function titleFrom(text) {
+        const t = text.trim().replace(/\s+/g, " ");
+        return t.length > 18 ? t.slice(0, 18) + "…" : t || "新对话";
+      }
+
+      function createSession(title = "新对话", seedWelcome = true) {
+        const session = {
+          id: uid(),
+          title,
+          messages: seedWelcome ? [{ role: "bot", text: WELCOME }] : [],
+        };
+        sessions.unshift(session);
+        return session;
+      }
+
+      function getActive() {
+        return sessions.find((s) => s.id === activeId);
+      }
+
+      function deleteSession(id, e) {
+        e.stopPropagation();
+        const idx = sessions.findIndex((s) => s.id === id);
+        if (idx === -1) return;
+
+        sessions.splice(idx, 1);
+
+        if (sessions.length === 0) {
+          const session = createSession();
+          activeId = session.id;
+        } else if (activeId === id) {
+          activeId = sessions[0].id;
+        }
+
+        renderSessions();
+        renderMessages();
+      }
+
+      function renderSessions() {
+        sessionList.innerHTML = sessions
+          .map(
+            (s) => `
+          <div
+            role="button"
+            tabindex="0"
+            data-id="${s.id}"
+            class="session-item group flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm transition ${
+              s.id === activeId
+                ? "bg-white/10 text-white"
+                : "text-slate-300 hover:bg-white/5"
+            }"
+          >
+            <svg class="h-4 w-4 shrink-0 opacity-60" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 10h8M8 14h5M6 6h12a2 2 0 012 2v8a2 2 0 01-2 2H9l-3 3v-3H6a2 2 0 01-2-2V8a2 2 0 012-2z" />
+            </svg>
+            <span class="min-w-0 flex-1 truncate">${escapeHtml(s.title)}</span>
+            <button
+              type="button"
+              data-delete="${s.id}"
+              class="delete-btn shrink-0 rounded-md p-1 text-slate-400 opacity-0 transition hover:bg-red-500/20 hover:text-red-400 group-hover:opacity-100"
+              aria-label="删除对话"
+            >
+              <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          </div>`
+          )
+          .join("");
+
+        sessionList.querySelectorAll(".session-item").forEach((row) => {
+          row.addEventListener("click", () => switchSession(row.dataset.id));
+          row.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              switchSession(row.dataset.id);
+            }
+          });
+        });
+
+        sessionList.querySelectorAll(".delete-btn").forEach((btn) => {
+          btn.addEventListener("click", (e) => deleteSession(btn.dataset.delete, e));
+        });
+      }
+
+      const STAGE_META = {
+        greeting: { label: "问候", cls: "bg-sky-100 text-sky-700" },
+        bm25: { label: "FAQ", cls: "bg-emerald-100 text-emerald-700" },
+        rag: { label: "知识库", cls: "bg-violet-100 text-violet-700" },
+        web: { label: "联网", cls: "bg-amber-100 text-amber-800" },
+        fallback: { label: "兜底", cls: "bg-slate-200 text-slate-600" },
+      };
+
+      function renderStageBadge(stage, score) {
+        if (!stage) return "";
+        const meta = STAGE_META[stage] || { label: stage, cls: "bg-slate-100 text-slate-600" };
+        const scoreText =
+          typeof score === "number" && stage !== "greeting" && stage !== "fallback"
+            ? ` · ${score.toFixed(2)}`
+            : "";
+        return `<span class="mb-2 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${meta.cls}">${meta.label}${scoreText}</span>`;
+      }
+
+      function renderMessages() {
+        const session = getActive();
+        if (!session) return;
+
+        messagesEl.innerHTML = session.messages
+          .map((m) => {
+            if (m.role === "user") {
+              return `
+              <div class="mb-8 flex justify-end">
+                <div class="max-w-[85%] rounded-2xl bg-emerald-600 px-4 py-3 text-sm leading-relaxed text-white">
+                  <p class="whitespace-pre-wrap">${escapeHtml(m.text)}</p>
+                </div>
+              </div>`;
+            }
+            const badge = renderStageBadge(m.stage, m.score);
+            return `
+            <div class="mb-8 flex gap-4">
+              <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-xs font-bold text-white">AI</div>
+              <div class="min-w-0 flex-1 pt-0.5">
+                ${badge}
+                <p class="whitespace-pre-wrap text-sm leading-7 text-slate-700">${escapeHtml(m.text)}</p>
+              </div>
+            </div>`;
+          })
+          .join("");
+
+        chatTitle.textContent = session.title;
+        chat.scrollTop = chat.scrollHeight;
+      }
+
+      function escapeHtml(str) {
+        return str
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      function switchSession(id) {
+        activeId = id;
+        renderSessions();
+        renderMessages();
+        closeSidebar();
+        input.focus();
+      }
+
+      function newChat() {
+        const session = createSession();
+        activeId = session.id;
+        renderSessions();
+        renderMessages();
+        closeSidebar();
+        input.focus();
+      }
+
+      async function askBackend(session, question) {
+        sendBtn.disabled = true;
+        try {
+          const resp = await fetch("/api/ask", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              question,
+              session_id: session.id || null,
+            }),
+          });
+          const data = await resp.json();
+          if (!resp.ok) {
+            throw new Error(data.detail || "请求失败");
+          }
+          if (data.session_id) {
+            session.id = data.session_id;
+          }
+          const stage = data.stage || "";
+          session.messages.push({
+            role: "bot",
+            text: data.answer || "",
+            stage,
+            score: typeof data.score === "number" ? data.score : null,
+          });
+        } catch (err) {
+          session.messages.push({
+            role: "bot",
+            text: `请求失败：${err.message || err}`,
+          });
+        }
+        renderMessages();
+        sendBtn.disabled = false;
+        input.focus();
+      }
+
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const session = getActive();
+        if (!session) return;
+
+        const text = input.value.trim();
+        if (!text) return;
+
+        if (session.title === "新对话" && session.messages.length <= 1) {
+          session.title = titleFrom(text);
+        }
+
+        session.messages.push({ role: "user", text });
+        input.value = "";
+        input.style.height = "auto";
+        renderSessions();
+        renderMessages();
+        askBackend(session, text);
+      });
+
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          form.requestSubmit();
+        }
+      });
+
+      input.addEventListener("input", () => {
+        input.style.height = "auto";
+        input.style.height = Math.min(input.scrollHeight, 160) + "px";
+      });
+
+      document.getElementById("newChatBtn").addEventListener("click", newChat);
+
+      function openSidebar() {
+        sidebar.classList.remove("max-md:-translate-x-full");
+        sidebarMask.classList.remove("hidden");
+      }
+
+      function closeSidebar() {
+        sidebar.classList.add("max-md:-translate-x-full");
+        sidebarMask.classList.add("hidden");
+      }
+
+      document.getElementById("openSidebarBtn").addEventListener("click", openSidebar);
+      document.getElementById("closeSidebarBtn").addEventListener("click", closeSidebar);
+      sidebarMask.addEventListener("click", closeSidebar);
+
+      // 初始化：预置两条示例对话 + 一条空的新对话
+      const demo1 = createSession("Python 就业方向");
+      demo1.messages.push(
+        { role: "user", text: "学 Python 可以做什么？" },
+        { role: "bot", text: "常见方向包括 Web 开发、数据分析、自动化运维、人工智能等。课程里会结合 RAG 做智能问答场景。" }
+      );
+      const demo2 = createSession("什么是 RAG？");
+      demo2.messages.push(
+        { role: "user", text: "RAG 是什么？" },
+        { role: "bot", text: "RAG（检索增强生成）先检索知识库，再让大模型结合检索结果回答，减少幻觉、便于接入私有知识。" }
+      );
+      const first = createSession();
+      activeId = first.id;
+      renderSessions();
+      renderMessages();
+      input.focus();
+    </script>
+  </body>
+</html>
